@@ -1,6 +1,5 @@
 package com.example.ec.web;
 
-import com.example.ec.domain.TourRating;
 import com.example.ec.service.TourRatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,21 +16,24 @@ import java.util.NoSuchElementException;
 public class RatingController {
     private TourRatingService tourRatingService;
 
+    private RatingAssembler assembler;
+
     @Autowired
-    public RatingController(TourRatingService tourRatingService) {
+    public RatingController(TourRatingService tourRatingService, RatingAssembler assembler) {
         this.tourRatingService = tourRatingService;
+        this.assembler = assembler;
     }
 
     @GetMapping
-    public List<TourRating> getAll() {
-        return tourRatingService.lookupAll();
+    public List<RatingDto> getAll() {
+        return assembler.toResources(tourRatingService.lookupAll());
     }
 
     @GetMapping("/{id}")
-    public TourRating getRating(@PathVariable("id") Integer id) {
-        return tourRatingService.lookupRatingById(id)
-                .orElseThrow(() -> new NoSuchElementException("Rating " + id + " not found")
-                );
+    public RatingDto getRating(@PathVariable("id") Integer id) {
+        return assembler.toResource(tourRatingService.lookupRatingById(id)
+                .orElseThrow(() -> new NoSuchElementException("Rating " + id + " not found"))
+        );
     }
 
 
