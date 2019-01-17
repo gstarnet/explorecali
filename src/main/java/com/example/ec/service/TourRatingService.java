@@ -160,8 +160,8 @@ public class TourRatingService {
         LOGGER.info("Rate tour {} by customers {}", tourId, Arrays.asList(customers).toString());
         Tour tour = tourRepository.findById(tourId).orElseThrow(() -> new NoSuchElementException());
         for (Integer c : customers) {
-            LOGGER.debug("Attempt to create Tour Rating for customer {}", c);
-            tourRatingRepository.save(new TourRating(tour, c, score));
+                LOGGER.debug("Attempt to create Tour Rating for customer {}", c);
+                tourRatingRepository.save(new TourRating(tour, c, score));
         }
     }
 
