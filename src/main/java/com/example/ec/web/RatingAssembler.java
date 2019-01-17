@@ -28,8 +28,7 @@ public class RatingAssembler extends ResourceAssemblerSupport<TourRating,RatingD
     }
 
     /**
-     *  Converts a TourRating into a RatingDto
-     *  Generates "rating", and "tour" links
+     *  Generates "self", "rating" and tour links
      *
      * @param tourRating Tour Rating Entity
      * @return
