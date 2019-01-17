@@ -1,174 +1,111 @@
 package com.example.ec.service;
 
-import com.example.ec.domain.Tour;
 import com.example.ec.domain.TourRating;
-import com.example.ec.repo.TourRatingRepository;
-import com.example.ec.repo.TourRepository;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
 /**
  * Created by Mary Ellen Bowman
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@Transactional
 public class TourRatingServiceTest {
-
-    private static final int CUSTOMER_ID = 123;
-    private static final int TOUR_ID = 1;
-    private static final int TOUR_RATING_ID = 100;
-
-    @Mock
-    private TourRepository tourRepositoryMock;
-    @Mock
-    private TourRatingRepository tourRatingRepositoryMock;
-
-    @InjectMocks //Autowire TourRatingService(tourRatingRepositoryMock, tourRepositoryMock)
+    @Autowired
     private TourRatingService service;
-
-    @Mock
-    private Tour tourMock;
-    @Mock
-    private TourRating tourRatingMock;
-
-
-    /**
-     * Mock responses to commonly invoked methods.
-     */
-    @Before
-    public void setupReturnValuesOfMockMethods() {
-        when(tourRepositoryMock.findById(TOUR_ID)).thenReturn(Optional.of(tourMock));
-        when(tourMock.getId()).thenReturn(TOUR_ID);
-        when(tourRatingRepositoryMock.findByTourIdAndCustomerId(TOUR_ID,CUSTOMER_ID)).thenReturn(Optional.of(tourRatingMock));
-        when(tourRatingRepositoryMock.findByTourId(TOUR_ID)).thenReturn(Arrays.asList(tourRatingMock));
-    }
-
-    /**************************************************************************************
-     *
-     * Verify the service return value
-     *
-     **************************************************************************************/
-    @Test
-    public void lookupRatingById() {
-        when(tourRatingRepositoryMock.findById(TOUR_RATING_ID)).thenReturn(Optional.of(tourRatingMock));
-
-        //invoke and verify lookupRatingById
-        assertThat(service.lookupRatingById(TOUR_RATING_ID).get(), is(tourRatingMock));
-    }
-
-    @Test
-    public void lookupAll() {
-        when(tourRatingRepositoryMock.findAll()).thenReturn(Arrays.asList(tourRatingMock));
-
-        //invoke and verify lookupAll
-        assertThat(service.lookupAll().get(0), is(tourRatingMock));
-    }
-
-    @Test
-    public void getAverageScore() {
-        when(tourRatingMock.getScore()).thenReturn(10);
-
-        //invoke and verify getAverageScore
-        assertThat(service.getAverageScore(TOUR_ID), is(10.0));
-    }
-
-    @Test
-    public void lookupRatings() {
-        //create mocks of Pageable and Page (only needed in this test)
-        Pageable pageable = mock(Pageable.class);
-        Page page = mock(Page.class);
-        when(tourRatingRepositoryMock.findByTourId(1, pageable)).thenReturn(page);
-
-        //invoke and verify lookupRatings
-        assertThat(service.lookupRatings(TOUR_ID, pageable), is(page));
-    }
-
-    /**************************************************************************************
-     *
-     * Verify the invocation of dependencies.
-     *
-     **************************************************************************************/
-
-    @Test
-    public void delete() {
-        //invoke delete
-        service.delete(1,CUSTOMER_ID);
-
-        //verify tourRatingRepository.delete invoked
-        verify(tourRatingRepositoryMock).delete(any(TourRating.class));
-    }
 
     @Test
     public void rateMany() {
-        //invoke rateMany
-        service.rateMany(TOUR_ID, 10, new Integer[]{CUSTOMER_ID, CUSTOMER_ID + 1});
+        int ratings = service.lookupAll().size();
+        Integer customers[] = {100, 101, 102};
+        service.rateMany(1, 3, customers);
+        assertThat(service.lookupAll().size() == (ratings + 3), is(true));
+    }
 
-        //verify tourRatingRepository.save invoked twice
-        verify(tourRatingRepositoryMock, times(2)).save(any(TourRating.class));
+    @Test(expected = DataIntegrityViolationException.class)
+    public void rateManyProveRollback() {
+        int ratings = service.lookupAll().size();
+        Integer customers[] = {100, 101, 102};
+        service.rateMany(1, 3, customers);
+        service.rateMany(1, 3, customers);
     }
 
     @Test
+    public void createNew() {
+        service.createNew(1, 456, 2, "it was fair");
+        assertThat(service.lookupAll().stream()
+                .filter(tourRating -> tourRating.getTour().getId() == 1 && tourRating.getCustomerId() == 456)
+                .findFirst().isPresent(), is(true));
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void createNewException() {
+        service.createNew(123, 456, 2, "it was fair");
+    }
+    @Test
     public void update() {
-        //invoke update
-        service.update(TOUR_ID,CUSTOMER_ID,5, "great");
+        Integer tourId = 1;
+        Integer customerId = 4;
+        TourRating tourRating = service.update(tourId, customerId, 1, "one");
+        assertThat(tourRating.getTour().getId(), is(tourId));
+        assertThat(tourRating.getCustomerId(), is(customerId));
+        assertThat(tourRating.getScore(), is(1));
+        assertThat(tourRating.getComment(), is("one"));
+    }
 
-        //verify tourRatingRepository.save invoked once
-        verify(tourRatingRepositoryMock).save(any(TourRating.class));
-
-        //verify and tourRating setter methods invoked
-        verify(tourRatingMock).setComment("great");
-        verify(tourRatingMock).setScore(5);
+    @Test(expected = NoSuchElementException.class)
+    public void updateException() throws Exception {
+        service.update(1, 1, 1, "one");
     }
 
     @Test
     public void updateSome() {
-        //invoke updateSome
-        service.updateSome(TOUR_ID, CUSTOMER_ID, 1, "awful");
-
-        //verify tourRatingRepository.save invoked once
-        verify(tourRatingRepositoryMock).save(any(TourRating.class));
-
-        //verify and tourRating setter methods invoked
-        verify(tourRatingMock).setComment("awful");
-        verify(tourRatingMock).setScore(1);
+        Integer tourId = 1;
+        Integer customerId = 4;
+        TourRating tourRating = service.updateSome(tourId, customerId, 1, "one");
+        assertThat(tourRating.getTour().getId(), is(tourId));
+        assertThat(tourRating.getCustomerId(), is(customerId));
+        assertThat(tourRating.getScore(), is(1));
+        assertThat(tourRating.getComment(), is("one"));
     }
 
-     /**************************************************************************************
-     *
-     * Verify the invocation of dependencies
-     * Capture parameter values.
-     * Verify the parameters.
-     *
-     **************************************************************************************/
+    @Test(expected = NoSuchElementException.class)
+    public void updateSomeException() throws Exception {
+        service.update(1, 1, 1, "one");
+    }
 
-     @Test
-    public void createNew() {
-        //prepare to capture a TourRating Object
-        ArgumentCaptor<TourRating> tourRatingCaptor = ArgumentCaptor.forClass(TourRating.class);
+    @Test
+    public void getAverageScore() {
+        assertTrue(service.getAverageScore(1) == 4.0);
+    }
 
-        //invoke createNew
-        service.createNew(TOUR_ID, CUSTOMER_ID, 2, "ok");
+    @Test(expected = NoSuchElementException.class)
+    public void getAverageScoreException() {
+        service.getAverageScore(1123); //That tour does not exist
+    }
 
-        //verify tourRatingRepository.save invoked once and capture the TourRating Object
-        verify(tourRatingRepositoryMock).save(tourRatingCaptor.capture());
+    @Test
+    public void delete() {
+        TourRating tourRating = service.lookupRatingById(1).get();
+        service.delete(tourRating.getTour().getId(), tourRating.getCustomerId());
+        assertThat(service.lookupRatingById(tourRating.getId()).isPresent(), is(false));
+    }
 
-        //verify the attributes of the Tour Rating Object
-        assertThat(tourRatingCaptor.getValue().getTour(), is(tourMock));
-        assertThat(tourRatingCaptor.getValue().getCustomerId(), is(CUSTOMER_ID));
-        assertThat(tourRatingCaptor.getValue().getScore(), is(2));
-        assertThat(tourRatingCaptor.getValue().getComment(), is("ok"));
+    @Test(expected = NoSuchElementException.class)
+    public void deleteException() {
+        service.delete(1234, 1234);
     }
 }

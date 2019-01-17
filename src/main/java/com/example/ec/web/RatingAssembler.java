@@ -1,12 +1,20 @@
 package com.example.ec.web;
 
 import com.example.ec.domain.TourRating;
-import com.example.ec.repo.TourRepository;
-import org.springframework.data.rest.webmvc.support.RepositoryEntityLinks;
-import org.springframework.hateoas.Link;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.PagedResources;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
@@ -18,17 +26,15 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
  */
 @Component
 public class RatingAssembler extends ResourceAssemblerSupport<TourRating,RatingDto> {
+    private PagedResourcesAssembler<RatingDto> pagedAssembler;
 
-    //Helper to fetch Spring Data Rest Repository links.
-    private RepositoryEntityLinks entityLinks;
-
-    public RatingAssembler( RepositoryEntityLinks entityLinks) {
+    @Autowired
+    public RatingAssembler(PagedResourcesAssembler pagedAssembler) {
         super(RatingController.class, RatingDto.class);
-        this.entityLinks = entityLinks;
+        this.pagedAssembler = pagedAssembler;
     }
-
     /**
-     *  Generates "self", "rating" and tour links
+     *  Generates "self" and "rating":{ "href": "/explorecali/ratings/id"}
      *
      * @param tourRating Tour Rating Entity
      * @return
@@ -36,14 +42,17 @@ public class RatingAssembler extends ResourceAssemblerSupport<TourRating,RatingD
     @Override
     public RatingDto toResource(TourRating tourRating) {
         RatingDto rating = new RatingDto(tourRating.getScore(), tourRating.getComment(), tourRating.getCustomerId());
+        int id = tourRating.getId();
 
-        // "self" : ".../ratings/{ratingId}"
-        ControllerLinkBuilder ratingLink = linkTo(methodOn(RatingController.class).getRating(tourRating.getId()));
-        rating.add(ratingLink.withSelfRel());
+        // "href" : "explorecali/ratings/id"
+        ControllerLinkBuilder link = linkTo(methodOn(RatingController.class).getRating(id));
 
-        //"tour" : ".../tours/{tourId}"
-       Link tourLink = entityLinks.linkToSingleResource(TourRepository.class, tourRating.getTour().getId());
-       rating.add(tourLink.withRel("tour"));
+        //"self" : "href"
+        rating.add(link.withSelfRel());
+
+        //"rating" : "href"
+        rating.add(link.withRel("rating"));
+
        return rating;
     }
 

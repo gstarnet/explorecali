@@ -22,12 +22,12 @@ CREATE TABLE user_role (
   CONSTRAINT FK_SECURITY_ROLE_ID FOREIGN KEY (role_id) REFERENCES security_role (id)
 );
 
-CREATE TABLE tour_package(
-  code CHAR(2) NOT NULL UNIQUE,
-  name VARCHAR(50) NOT NULL
+CREATE TABLE TOUR_PACKAGE(
+  CODE CHAR(2) NOT NULL UNIQUE,
+  NAME VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE tour (
+CREATE TABLE TOUR (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tour_package_code CHAR(2) NOT NULL,
   title VARCHAR(100) NOT NULL,
@@ -40,15 +40,15 @@ CREATE TABLE tour (
   region VARCHAR(20) NOT NULL,
   keywords VARCHAR(100)
 );
-ALTER TABLE tour ADD FOREIGN KEY (tour_package_code) REFERENCES tour_package(code);
+ALTER TABLE TOUR ADD FOREIGN KEY (tour_package_code) REFERENCES tour_package(code);
 
 
-CREATE TABLE tour_rating (
+CREATE TABLE TOUR_RATING (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     tour_id BIGINT,
     customer_id BIGINT,
     score INT,
     comment VARCHAR(100));
 
-ALTER TABLE tour_rating ADD FOREIGN KEY (tour_id) REFERENCES tour(id);
-ALTER TABLE tour_rating ADD UNIQUE MyConstraint (tour_id, customer_id);
+ALTER TABLE TOUR_RATING ADD FOREIGN KEY (tour_id) REFERENCES tour(id);
+ALTER TABLE TOUR_RATING ADD UNIQUE MyConstraint (tour_id, customer_id);

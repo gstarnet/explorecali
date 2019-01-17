@@ -6,7 +6,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
 /**
- * Created by Mary Ellen Bowman
+ * Created by maryellenbowman on 4/15/18.
  */
 public class RatingDtoTest {
     @Test

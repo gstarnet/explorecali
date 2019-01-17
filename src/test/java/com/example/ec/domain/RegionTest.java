@@ -15,6 +15,7 @@ public class RegionTest {
         assertThat(Region.Northern_California, is(Region.findByLabel("Northern California")));
         assertThat(Region.Southern_California, is(Region.findByLabel("Southern California")));
         assertThat(Region.Varies, is(Region.findByLabel("Varies")));
+
     }
 
     @Test

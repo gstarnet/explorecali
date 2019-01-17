@@ -1,11 +1,16 @@
 package com.example.ec.web;
 
+import com.example.ec.domain.TourRating;
+import com.fasterxml.jackson.annotation.JsonClassDescription;
 import org.springframework.hateoas.ResourceSupport;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 /**
  * Data Transfer Object for Rating a Tour.

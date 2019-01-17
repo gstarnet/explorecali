@@ -1,150 +1,121 @@
 package com.example.ec.web;
 
-import com.example.ec.domain.Tour;
 import com.example.ec.domain.TourRating;
 import com.example.ec.service.TourRatingService;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.PagedResources;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 /**
- *
- * Invoke the Controller methods via HTTP.
- * Do not invoke the tourRatingService methods, use Mock instead
  * Created by Mary Ellen Bowman.
  */
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class TourRatingControllerTest {
+    @MockBean
+    private TourRatingService service;
 
-    //These Tour and rating id's do not already exist in the db
-    private static final int TOUR_ID = 999;
-    private static final int CUSTOMER_ID = 1000;
-    private static final int SCORE = 3;
-    private static final String COMMENT = "comment";
-    private static final String TOUR_RATINGS_URL = "/tours/" + TOUR_ID + "/ratings";
+    @Mock
+    private TourRating tourRating;
+
+    private String tourRatingJson =
+            "      \"score\" : 1,\n" +
+            "      \"comment\" : \"comment\",\n" +
+            "      \"customerId\" : 3";
+
+    private RatingDto ratingDto = new RatingDto(1, "comment",3);
 
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @MockBean
-    private TourRatingService serviceMock;
-
-    @Mock
-    private TourRating tourRatingMock;
-
-    @Mock
-    private Tour tourMock;
-
-    private RatingDto ratingDto = new RatingDto(SCORE, COMMENT,CUSTOMER_ID);
 
     @Before
-    public void setupReturnValuesOfMockMethods() {
-        when(tourRatingMock.getComment()).thenReturn(COMMENT);
-        when(tourRatingMock.getScore()).thenReturn(SCORE);
-        when(tourRatingMock.getCustomerId()).thenReturn(CUSTOMER_ID);
-        when(tourRatingMock.getTour()).thenReturn(tourMock);
-        when(tourMock.getId()).thenReturn(TOUR_ID);
+    public void setup() {
+        when(tourRating.getComment()).thenReturn("comment");
+        when(tourRating.getScore()).thenReturn(1);
+        when(tourRating.getCustomerId()).thenReturn(3);
     }
 
-    /**
-     *  HTTP POST /tours/{tourId}/ratings
-     */
     @Test
     public void createTourRating() throws Exception {
-        restTemplate.postForEntity(TOUR_RATINGS_URL, ratingDto, Void.class);
+        restTemplate.postForEntity("/tours/1/ratings", ratingDto, Void.class);
 
-        verify(this.serviceMock).createNew(TOUR_ID, CUSTOMER_ID, SCORE, COMMENT);
+        verify(this.service).createNew(1, 3, 1, "comment");
     }
 
-    /**
-     *  HTTP DELETE /tours/{tourId}/ratings
-     */
-    @Test
-    public void delete() throws Exception {
-        restTemplate.delete(TOUR_RATINGS_URL + "/" + CUSTOMER_ID);
-
-        verify(serviceMock).delete(TOUR_ID, CUSTOMER_ID);
-    }
-
-    /**
-     *  HTTP POST /tours/{tourId}/ratings/{score}?customers={ids..}
-     */
     @Test
     public void createManyTourRatings() throws Exception {
-        restTemplate.postForEntity(TOUR_RATINGS_URL + "/" + SCORE + "?customers=" + CUSTOMER_ID, ratingDto, Void.class);
-        verify(serviceMock).rateMany(TOUR_ID, SCORE, new Integer[] {CUSTOMER_ID});
+        restTemplate.postForEntity("/tours/1/ratings/3?customers=1", ratingDto, Void.class);
+
+        Integer [] customers = {1};
+        verify(service).rateMany(1, 3, customers);
     }
 
-    /**
-     *  HTTP GET /tours/{tourId}/ratings
-     */
     @Test
     public void getAllRatingsForTour() throws Exception {
-        List<TourRating> listOfTourRatings = Arrays.asList(tourRatingMock);
-        Page<TourRating> page = new PageImpl(listOfTourRatings, PageRequest.of(0,10),1);
-        when(serviceMock.lookupRatings(anyInt(),any(Pageable.class))).thenReturn(page);
+        List<TourRating> listOfTourRatings = Arrays.asList(tourRating);
+        Page<TourRating> page = new PageImpl(listOfTourRatings, new PageRequest(0,10),1);
+        when(service.lookupRatings(anyInt(),any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<String> response = restTemplate.getForEntity(TOUR_RATINGS_URL,String.class);
+        ResponseEntity<String> response = restTemplate.getForEntity("/tours/1/ratings",String.class);
 
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
-        verify(serviceMock).lookupRatings(anyInt(), any(Pageable.class));
+        assertThat(response.getBody().contains(tourRatingJson), is(true));
     }
 
-    /**
-     *  HTTP GET /tours/{tourId}/ratings/average
-     */
     @Test
     public void getAverage() throws Exception {
-        when(serviceMock.getAverageScore(TOUR_ID)).thenReturn(3.2);
+        when(service.getAverageScore(1)).thenReturn(3.2);
 
-        ResponseEntity<String> response = restTemplate.getForEntity(TOUR_RATINGS_URL + "/average", String.class);
+        ResponseEntity<String> response = restTemplate.getForEntity("/tours/1/ratings/average", String.class);
 
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
         assertThat(response.getBody(), is("{\"average\":3.2}"));
     }
 
-    /**
-     *  HTTP PUT /tours/{tourId}/ratings
-     */
     @Test
     public void updateWithPut() throws Exception {
-        when(serviceMock.update(TOUR_ID, CUSTOMER_ID, SCORE, COMMENT)).thenReturn(tourRatingMock);
+        when(service.update(1, 3, 1, "comment")).thenReturn(tourRating);
 
-        restTemplate.put(TOUR_RATINGS_URL, ratingDto);
+        restTemplate.put("/tours/1/ratings", ratingDto);
 
-        verify(serviceMock).update(TOUR_ID, CUSTOMER_ID, SCORE, COMMENT);
+        verify(service).update(1, 3, 1, "comment");
     }
 
-    /**
-     *  HTTP PATCH /tours/{tourId}/ratings
-     */
 
     /**
      *  RestTemplate Patch only works if it uses httpclient. Method will only work if:
@@ -161,12 +132,19 @@ public class TourRatingControllerTest {
     @Ignore
     public  void updateWithPatch() {
 
-        when(serviceMock.updateSome(TOUR_ID, CUSTOMER_ID, SCORE, COMMENT)).thenReturn(tourRatingMock);
+        when(service.updateSome(1, 3, 1, "comment")).thenReturn(tourRating);
 
-        restTemplate.patchForObject(TOUR_RATINGS_URL, ratingDto, RatingDto.class);
+        restTemplate.patchForObject("/tours/1/ratings", ratingDto, RatingDto.class);
 
-        verify(serviceMock).updateSome(TOUR_ID, CUSTOMER_ID, SCORE, COMMENT);
+        verify(service).updateSome(1, 3, 1, "comment");
 
+    }
+
+    @Test
+    public void delete() throws Exception {
+        restTemplate.delete("/tours/1/ratings/3");
+
+        verify(service).delete(1, 3);
     }
 
 }
