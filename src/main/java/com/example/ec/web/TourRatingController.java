@@ -61,7 +61,7 @@ public class TourRatingController {
         tourRatingService.rateMany(tourId, score, customers);
     }
 
-     /**
+    /**
      * Lookup a the Ratings for a tour.
      *
      * @param tourId
@@ -96,8 +96,8 @@ public class TourRatingController {
      */
     @PutMapping
     public RatingDto updateWithPut(@PathVariable(value = "tourId") int tourId, @RequestBody @Validated RatingDto ratingDto) {
-         return toDto(tourRatingService.update(tourId, ratingDto.getCustomerId(),
-                 ratingDto.getScore(), ratingDto.getComment()));
+        return toDto(tourRatingService.update(tourId, ratingDto.getCustomerId(),
+                ratingDto.getScore(), ratingDto.getComment()));
     }
     /**
      * Update score or comment of a Tour Rating
@@ -108,8 +108,8 @@ public class TourRatingController {
      */
     @PatchMapping
     public RatingDto updateWithPatch(@PathVariable(value = "tourId") int tourId, @RequestBody @Validated RatingDto ratingDto) {
-         return toDto(tourRatingService.updateSome(tourId, ratingDto.getCustomerId(),
-                 ratingDto.getScore(), ratingDto.getComment()));
+        return toDto(tourRatingService.updateSome(tourId, ratingDto.getCustomerId(),
+                ratingDto.getScore(), ratingDto.getComment()));
     }
 
     /**
