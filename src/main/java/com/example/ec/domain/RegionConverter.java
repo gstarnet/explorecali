@@ -9,7 +9,7 @@ import javax.persistence.Converter;
  * Created by Mary Ellen Bowman
  */
 @Converter(autoApply = true)
-public class RegionConverter implements AttributeConverter<Region, String> {
+public class RegionConverter implements AttributeConverter<Region, String>{
     @Override
     public String convertToDatabaseColumn(Region region) {
         return region.getLabel();
