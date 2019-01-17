@@ -41,7 +41,7 @@ public class ExplorecaliApplication implements CommandLineRunner {
 	 *
 	 * @param strings
 	 * @throws Exception if problem occurs.
-     */
+	 */
 	@Override
 	public void run(String... strings) throws Exception {
 		//Create the default tour packages
@@ -85,11 +85,12 @@ public class ExplorecaliApplication implements CommandLineRunner {
 		 *
 		 * @return a List of TourFromFile objects.
 		 * @throws IOException if ObjectMapper unable to open file.
-         */
+		 */
 		static List<TourFromFile> importTours() throws IOException {
 			return new ObjectMapper().setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY).
 					readValue(TourFromFile.class.getResourceAsStream("/ExploreCalifornia.json"),new TypeReference<List<TourFromFile>>(){});
 		}
 	}
+
 
 }
