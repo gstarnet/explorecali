@@ -32,7 +32,7 @@ public class UserControllerTest {
 
     private LoginDto signupDto = new LoginDto("larry", "1234", "larry", "miller");
     private User user = new User(signupDto.getUsername(), signupDto.getPassword(), new Role(),
-                                 signupDto.getFirstName(), signupDto.getLastName());
+            signupDto.getFirstName(), signupDto.getLastName());
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -53,12 +53,12 @@ public class UserControllerTest {
     @Test
     public void signup(){
         when(service.signup(signupDto.getUsername(), signupDto.getPassword(), signupDto.getFirstName(),
-                            signupDto.getLastName())).thenReturn(Optional.of(user));
+                signupDto.getLastName())).thenReturn(Optional.of(user));
 
         ResponseEntity<User> response = restTemplate.exchange("/users/signup",
-                            POST,
-                            new HttpEntity(signupDto,jwtRequestHelper.withRole("ROLE_ADMIN")),
-                            User.class);
+                POST,
+                new HttpEntity(signupDto,jwtRequestHelper.withRole("ROLE_ADMIN")),
+                User.class);
 
         assertThat(response.getStatusCode().value(), is(201));
         assertThat(response.getBody().getUsername(), is(user.getUsername()));
